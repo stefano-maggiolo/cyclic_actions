@@ -81,27 +81,100 @@ def all_discrepancies(discrepancies, Q, start=0):
     return ret
 
 
+def to_text(g, branch, results):
+    string = ""
+    string += "Faithful actions of non-trivial cyclic groups " \
+              "on a curve of genus %d" % g
+    if sum(branch) != 0:
+        string += "with:"
+    string += "\n"
+    for i, f in enumerate(branch):
+        if f != 0:
+            string += "  %d points with counterimage " \
+                      "with %d points\n" % (f, i + 1)
+    string += "\n"
+    for idx_r, r in enumerate(results):
+        for idx_h, h in enumerate(reversed(results[r].keys())):
+            for idx_x, x in enumerate(results[r][h][1]):
+                ci_string = ""
+                for idx_y, y in enumerate(x):
+                    counter_images = (r - results[r][h][0][idx_y])
+                    if y == 1:
+                        ci_string += "(%s)" % ("*" * counter_images)
+                    elif y > 1:
+                        ci_string += "(%s)^%d" % ("*" * counter_images, y)
+                string += "Z_%d, h = %d: %s\n" % (r, h, ci_string)
+        if idx_r != len(results) - 1:
+            string +=  "\n"
+    return string
+
+
+def to_latex(g, branch, results):
+    multirow = "\\multirow{%d}{*}{$%d$}"
+    string = ""
+    string += """\
+\\begin{table}
+  \\centering
+  \\begin{tabular}{lll}
+    \\toprule
+    $r$ & $h$ & Additional ramification\\\\
+    \\midrule[1pt]
+"""
+    for idx_r, r in enumerate(results):
+        size_r = sum((len(results[r][x][1]) for x in results[r]))
+        for idx_h, h in enumerate(reversed(results[r].keys())):
+            size_h = len(results[r][h][1])
+            for idx_x, x in enumerate(results[r][h][1]):
+                ci_string = ""
+                for idx_y, y in enumerate(x):
+                    counter_images = (r - results[r][h][0][idx_y])
+                    if y == 1:
+                        ci_string += "(%s)" % ("\\bullet" * counter_images)
+                    elif y > 1:
+                        ci_string += "(%s)^%d" % ("\\bullet" * counter_images, y)
+                string += "    "
+                if idx_h == 0 and idx_x == 0:
+                    string += multirow % (size_r, r)
+                else:
+                    string += "& "
+                if idx_x == 0:
+                    string +=  multirow % (size_h, h)
+                else:
+                    string += "& "
+                string += " $%s$\\\\\n" % ci_string
+            if idx_h != len(results[r]) - 1:
+                string +=  "    \\cmidrule{2-3}\n"
+        if idx_r != len(results) - 1:
+            string +=  "    \\midrule\n"
+    string += """\
+    \\bottomrule
+  \\end{tabular}
+  \\caption{Cyclic groups acting on a curve of genus $%d$ with some prescribed ramification.}
+  \\label{tab:cyclic_group_actions}
+\\end{table}
+""" % g
+    return string
+
+
+
 def run(g, branch):
     """Main algorithm.
 
     g (int): genus of the curve above.
     branch ([int]): the i-th element is the number of points of the
                     quotient with (i+1) points in the counterimage.
+    latex (bool): whether to provide output in LaTeX format.
 
     """
     lcm_ = 1
     N = 0
     c = 0
 
-    print "Faithful actions of non-trivial cyclic groups " \
-          "on a curve of genus %d with:" % g
     for i, f in enumerate(branch):
         if f != 0:
-            print "  %d points with counterimage with %d points" % (f, i + 1)
             lcm_ = lcm(lcm_, i + 1)
             N += f
             c += (i + 1) * f
-    print
     cp = 2 * g - 2 + c
 
     upper_limit = 2 * (2 * g + 1)  # Using Wiman
@@ -111,6 +184,7 @@ def run(g, branch):
     elif (2 - N == 0):
         upper_limit = min(upper_limit, 2 * cp)
 
+    results = {}
     for r in range(max(lcm_, 2), upper_limit + 1, lcm_):
         h_den = 2 * r
         h_num = (2 - N) * r + cp
@@ -121,14 +195,13 @@ def run(g, branch):
             Q = h_num - h_den * h
             rets = all_discrepancies(disc, Q)
             for ret in rets:
-                print "Z_%d, h = %d: " % (r, h),
-                for j, x in enumerate(ret):
-                    counter_images = (r - disc[j])
-                    if x == 1:
-                        print "(%s)" % ("*" * counter_images),
-                    elif x > 1:
-                        print "(%s)^%d" % ("*" * counter_images, x),
-                print
+                if r not in results:
+                    results[r] = {}
+                if h not in results[r]:
+                    results[r][h] = [disc, []]
+                results[r][h][1].append(ret)
+
+    return results
 
 
 def main():
@@ -143,12 +216,18 @@ def main():
     parser.add_argument("branch", type=int, nargs="*",
                         help="the i-th number is the number of branch points "
                         "with i+1 points in the counterimage")
+    parser.add_argument("-l", "--latex", action="store_true",
+                        help="output also in LaTeX format")
 
     args = parser.parse_args()
     if (args.genus < 0 or any([x < 0 for x in args.branch])):
         parser.usage()
         return
-    run(args.genus, args.branch)
+    results = run(args.genus, args.branch)
+    print_function = to_text
+    if args.latex:
+        print_function = to_latex
+    print print_function(args.genus, args.branch, results)
 
 
 if __name__ == "__main__":
