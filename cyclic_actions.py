@@ -86,13 +86,15 @@ def to_text(g, branch, results):
     string += "Faithful actions of non-trivial cyclic groups " \
               "on a curve of genus %d" % g
     if sum(branch) != 0:
-        string += "with:"
-    string += "\n"
-    for i, f in enumerate(branch):
-        if f != 0:
-            string += "  %d points with counterimage " \
-                      "with %d points\n" % (f, i + 1)
-    string += "\n"
+        string += " with:\n"
+        last_branch = max((i for i in range(len(branch)) if branch[i] != 0))
+        for i, f in enumerate(branch):
+            if f != 0:
+                string += "  %d points with counterimage " \
+                          "with %d points" % (f, i + 1)
+                if i != last_branch:
+                    string += ",\n"
+    string += ".\n\n"
     for idx_r, r in enumerate(results):
         for idx_h, h in enumerate(reversed(results[r].keys())):
             for idx_x, x in enumerate(results[r][h][1]):
@@ -146,13 +148,24 @@ def to_latex(g, branch, results):
                 string +=  "    \\cmidrule{2-3}\n"
         if idx_r != len(results) - 1:
             string +=  "    \\midrule\n"
+    caption = "Cyclic groups acting on a curve of genus $%d$" % g
+    if sum(branch) != 0:
+        caption += " with"
+        last_branch = max((i for i in range(len(branch)) if branch[i] != 0))
+        for i, f in enumerate(branch):
+            if f != 0:
+                caption += " $%d$ points with counterimage " \
+                          "consisting of $%d$ points" % (f, i + 1)
+                if i != last_branch:
+                    caption += ","
+    caption += "."
     string += """\
     \\bottomrule
   \\end{tabular}
-  \\caption{Cyclic groups acting on a curve of genus $%d$ with some prescribed ramification.}
+  \\caption{%s}
   \\label{tab:cyclic_group_actions}
 \\end{table}
-""" % g
+""" % caption
     return string
 
 
