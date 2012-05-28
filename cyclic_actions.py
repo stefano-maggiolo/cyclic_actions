@@ -95,8 +95,8 @@ def to_text(g, branch, results):
                 if i != last_branch:
                     string += ",\n"
     string += ".\n\n"
-    for idx_r, r in enumerate(results):
-        for idx_h, h in enumerate(reversed(results[r].keys())):
+    for idx_r, r in enumerate(sorted(results)):
+        for idx_h, h in enumerate(sorted(results[r], reverse=True)):
             for idx_x, x in enumerate(results[r][h][1]):
                 ci_string = ""
                 for idx_y, y in enumerate(x):
@@ -122,9 +122,9 @@ def to_latex(g, branch, results):
     $r$ & $h$ & Additional ramification\\\\
     \\midrule[1pt]
 """
-    for idx_r, r in enumerate(results):
+    for idx_r, r in enumerate(sorted(results)):
         size_r = sum((len(results[r][x][1]) for x in results[r]))
-        for idx_h, h in enumerate(reversed(results[r].keys())):
+        for idx_h, h in enumerate(sorted(results[r], reverse=True)):
             size_h = len(results[r][h][1])
             for idx_x, x in enumerate(results[r][h][1]):
                 ci_string = ""
