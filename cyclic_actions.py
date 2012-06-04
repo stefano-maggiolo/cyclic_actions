@@ -21,6 +21,20 @@
 import argparse
 
 
+def gcd(a, b):
+    """Return the gcd of a and b.
+
+    a, b (int): integers.
+
+    return (int): the gcd of a and b.
+
+    """
+    _gcd, tmp = a, b
+    while tmp != 0:
+        _gcd, tmp = tmp, _gcd % tmp
+    return _gcd
+
+
 def lcm(a, b):
     """Return the lcm of a and b.
 
@@ -29,10 +43,7 @@ def lcm(a, b):
     return (int): the lcm of a and b.
 
     """
-    gcd, tmp = a, b
-    while tmp != 0:
-        gcd, tmp = tmp, gcd % tmp
-    return a * b / gcd
+    return a * b / gcd(a, b)
 
 
 def discrepancies(r):
@@ -169,6 +180,58 @@ def to_latex(g, branch, results):
     return string
 
 
+def _ac_check(r, a, start=0, total=0):
+    """Helper function for ac_check. We can safely assign n_1 = 1
+    because in any case we can apply an automorphism of C_r sending
+    n_1 to 1.
+
+    r (int): the size of the cyclic group.
+    a ([int]): the a_i's in the equation.
+    start (int): the current position to assign.
+    total (int): the current total degree in the right of the equation.
+
+    return (bool): True if the degree equation has a solution.
+
+    """
+    if start >= len(a):
+        return total % r == 0
+    if start == 0:
+        return _ac_check(r, a, 1, r // a[0])
+
+    for i in xrange(1, a[start]):
+        if gcd(i, a[start]) == 1:
+            result = _ac_check(r, a, start + 1, total + i * r / a[start])
+            if result:
+                return True
+    return False
+
+
+def ac_check(r, br, disc, ret):
+    """Check a consequence of the abelian cover condition, that states
+    that if there is an cyclic cover with point P_i with preimage
+    stabilized by the subgroup of order of a_1, ..., a_k, then there
+    is a line bundle L on the quotient curve and coefficients n_1,
+    ..., n_k such that rL = sum n_i * r * P_i / a_i and gcd(n_i, a_i)
+    = 1. This function check that this equation has a solution at
+    least when we pass to the degrees of the line bundles.
+
+    r (int): the size of the cyclic group.
+    br ([int]): the prescribed branch points.
+    disc ([int]): the possible discrepancies;
+    ret ([int]): the additional branch points relative to disc.
+
+    return (bool): True if the degree equation has a solution.
+
+    """
+    a = []
+    for idx_x, x in enumerate(br):
+        if r != idx_x + 1:
+            a += ([r / (idx_x + 1)] * x)
+    for idx_x, x in enumerate(ret):
+        if r != idx_x + 1:
+            a += ([r / (r - disc[idx_x])] * x)
+    return _ac_check(r, sorted(a, reverse=True))
+
 
 def run(g, branch):
     """Main algorithm.
@@ -208,6 +271,8 @@ def run(g, branch):
             Q = h_num - h_den * h
             rets = all_discrepancies(disc, Q)
             for ret in rets:
+                if not ac_check(r, branch, disc, ret):
+                    continue
                 if r not in results:
                     results[r] = {}
                 if h not in results[r]:
