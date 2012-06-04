@@ -21,76 +21,7 @@
 import argparse
 
 
-def gcd(a, b):
-    """Return the gcd of a and b.
-
-    a, b (int): integers.
-
-    return (int): the gcd of a and b.
-
-    """
-    _gcd, tmp = a, b
-    while tmp != 0:
-        _gcd, tmp = tmp, _gcd % tmp
-    return _gcd
-
-
-def lcm(a, b):
-    """Return the lcm of a and b.
-
-    a, b (int): integers.
-
-    return (int): the lcm of a and b.
-
-    """
-    return a * b / gcd(a, b)
-
-
-def discrepancies(r):
-    """Return a list of all possible contribution to the discrepancy
-    coming from a branch point in the quotient curve.
-
-    r (int): the order of the cyclic group.
-
-    return ([int]): all possible contributions.
-
-    """
-    ret = []
-    for i in xrange(2, r + 1):
-        if r % i == 0:
-            ret.append((i - 1) * r / i)
-    return ret
-
-
-def all_discrepancies(discrepancies, Q, start=0):
-    """Given the list of possible contributions to the discrepancy and
-    the discrepancy Q to reach, return a list of all coefficients of
-    the linear combinations of elements of discrepancies that sum up
-    to Q.
-
-    discrepancies ([int]): the list of possible contribution as
-                           returned by discrepancies.
-    Q (int): the total discrepancy to reach.
-    start (int): used internally: we assume to use only discrepancies
-                                  starting from the index start.
-
-    return ([[int]]): the coefficients of the linear combination of
-                      discrepancies summing up to Q.
-
-    """
-    elements_to_use = len(discrepancies) - start
-    if Q == 0:
-        return [[0] * elements_to_use]
-    elif elements_to_use <= 0:
-        return []
-    ret = []
-    curr = discrepancies[start]
-    for i in xrange(Q / curr, -1, -1):
-        r = all_discrepancies(discrepancies, Q - i * curr, start + 1)
-        for x in r:
-            ret.append([i] + x)
-    return ret
-
+### PRINTING FUNCTIONS ###
 
 def to_text(g, branch, results):
     string = ""
@@ -178,6 +109,81 @@ def to_latex(g, branch, results):
 \\end{table}
 """ % caption
     return string
+
+
+### UTILITY FUNCTIONS ###
+
+def gcd(a, b):
+    """Return the gcd of a and b.
+
+    a, b (int): integers.
+
+    return (int): the gcd of a and b.
+
+    """
+    _gcd, tmp = a, b
+    while tmp != 0:
+        _gcd, tmp = tmp, _gcd % tmp
+    return _gcd
+
+
+def lcm(a, b):
+    """Return the lcm of a and b.
+
+    a, b (int): integers.
+
+    return (int): the lcm of a and b.
+
+    """
+    return a * b / gcd(a, b)
+
+
+### MAIN FUNCTIONS ###
+
+def discrepancies(r):
+    """Return a list of all possible contribution to the discrepancy
+    coming from a branch point in the quotient curve.
+
+    r (int): the order of the cyclic group.
+
+    return ([int]): all possible contributions.
+
+    """
+    ret = []
+    for i in xrange(2, r + 1):
+        if r % i == 0:
+            ret.append((i - 1) * r / i)
+    return ret
+
+
+def all_discrepancies(discrepancies, Q, start=0):
+    """Given the list of possible contributions to the discrepancy and
+    the discrepancy Q to reach, return a list of all coefficients of
+    the linear combinations of elements of discrepancies that sum up
+    to Q.
+
+    discrepancies ([int]): the list of possible contribution as
+                           returned by discrepancies.
+    Q (int): the total discrepancy to reach.
+    start (int): used internally: we assume to use only discrepancies
+                                  starting from the index start.
+
+    return ([[int]]): the coefficients of the linear combination of
+                      discrepancies summing up to Q.
+
+    """
+    elements_to_use = len(discrepancies) - start
+    if Q == 0:
+        return [[0] * elements_to_use]
+    elif elements_to_use <= 0:
+        return []
+    ret = []
+    curr = discrepancies[start]
+    for i in xrange(Q / curr, -1, -1):
+        r = all_discrepancies(discrepancies, Q - i * curr, start + 1)
+        for x in r:
+            ret.append([i] + x)
+    return ret
 
 
 def _ac_check(r, a, start=0, total=0):
