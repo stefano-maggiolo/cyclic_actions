@@ -54,7 +54,7 @@ def to_text(g, branch, results):
 
 
 def to_latex(g, branch, results):
-    multirow = "\\multirow{%d}{*}{$%d$}"
+    multirow = "\\multirow{%d}{*}{$%d$} "
     string = ""
     string += """\
 \\begin{table}
@@ -79,13 +79,11 @@ def to_latex(g, branch, results):
                 string += "    "
                 if idx_h == 0 and idx_x == 0:
                     string += multirow % (size_r, r)
-                else:
-                    string += "& "
+                string += "& "
                 if idx_x == 0:
                     string +=  multirow % (size_h, h)
-                else:
-                    string += "& "
-                string += " $%s$\\\\\n" % ci_string
+                string += "& "
+                string += "$%s$\\\\\n" % ci_string
             if idx_h != len(results[r]) - 1:
                 string +=  "    \\cmidrule{2-3}\n"
         if idx_r != len(results) - 1:
